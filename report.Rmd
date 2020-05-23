@@ -1,0 +1,28 @@
+---
+title: "Report II"
+author: "Petronela Pawlisz (230032), Patryk Wielopolski (234891)"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+  toc: True
+  number_sections: True
+header-includes:
+- \usepackage{amsmath}
+- \usepackage{float}
+- \usepackage{listings}
+- \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.align='center', message=F, warning=F) 
+```
+
+```{r echo=FALSE}
+source('src/generator.R')
+source('src/analysis_helpers.R')
+source('src/estimators.R')
+```
+
+
