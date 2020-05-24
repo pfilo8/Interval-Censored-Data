@@ -19,5 +19,3 @@ count_number_of_failures <- function(data) {
 count_percentage_of_left_interval_nonzero <- function(data) {
   return(mean(data$intervals$left == 0))
 }
-
-data <- generate_censored_data(1/10, 1/20, 30)
