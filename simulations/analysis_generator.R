@@ -29,7 +29,7 @@ simulation <- function(lambda, nu, t_end, mcs_steps=100) {
     ))
 }
 
-results <- expand.grid(seq(1, 5, 2), seq(1, 5, 2), seq(100, 700, 300))
+results <- expand.grid(seq(1, 10, 1), seq(1, 10, 1), seq(100, 700, 300))
 colnames(results) <- c("lambda", "nu", "T0")
 
 x <- apply(results, 
@@ -38,7 +38,8 @@ x <- apply(results,
              simulation(
                row['lambda'], 
                row['nu'],
-               row['T0']
+               row['T0'],
+               300
              )
            }
 )
@@ -48,3 +49,4 @@ colnames(x) <- c('replacements', 'without', 'inspections', 'failures', 'nonzero.
 results <- cbind(results, x)
 
 write.csv(results, 'results/results_analysis_generator.csv', row.names=FALSE)
+  

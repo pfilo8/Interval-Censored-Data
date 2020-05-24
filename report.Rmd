@@ -27,69 +27,36 @@ library(latex2exp)
 library(patchwork)
 
 source('src/generator.R')
+source('src/plots.R')
 ```
 
 \section{Introduction}
 In this report we will focus on interval censored data. We will consider simple example of lightbulb which is periodicaly inspected if it has failed. 
 
 \section{Generator}
-Our implementation of generator is presented on Listing \ref{lst:generator}. Firsly we create counters for current time, last time of lightbulb checking and last time of lightbulb changing. Also we initialize vectors and list which will store our results. Implementation of event loop is a bit straightforward. We are going through while loop till the current time is smaller than simulation end time. Then we check if lightbulb failed. If yes, then we save intervals, change lightbulb to new one and generate its time of failure and save that time. After that we generate new inspection time. When the while loop ends, we add last observations, which wasn't censured.
+Our implementation of generator is presented on Listing \ref{lst:generator}. Firsly we create counters for current time, last time of lightbulb checking and last time of lightbulb changing. Also we initialize vectors and list which will store our results. Implementation of event loop is a bit straightforward. We are going through while loop till the current time is smaller than simulation end time. Then we check if lightbulb failed. If yes, then we save intervals, change lightbulb to new one and generate its time of failure and save that time. After that we generate new inspection time. When the while loop ends, we add last observations, which wasn't censured. The function returns list of inspection times, light failure times, censored intervals and initial parameters.
 
 \lstinputlisting[language=R, caption=Implementation of generator., label={lst:generator}, captionpos=b]{src/generator.R}
 
-\begin{figure}
-```{r echo=FALSE, fig.width=8, fig.height=4.5}
-
-```
-\caption{Caption.}
-\label{fig:sample1}
-\end{figure}
-
-
+Sample realisations of process can be found on figure \ref{fig:sample}. There are two examples which shows times when inspection has occured (black dots) and lightbulb has died (red dots).
 
 \begin{figure}
 ```{r echo=FALSE, fig.width=6, fig.height=4.5}
 data1 <- generate_censored_data(1, 3, 30)
 
-p1 <- ggplot(data.frame()) +
-  geom_point(aes(x = data1$inspection_times, 
-                 y = rep_len(0, length(data1$inspection_times)),
-                 color = 'black')) +
-  geom_point(aes(x = data1$light_failures_times, 
-                 y = rep_len(0, length(data1$light_failures_times)), 
-                 color = 'red')) +
-  theme_minimal() +
-  xlab(TeX('Time $t$')) +
-  ylab('') +
-  scale_color_manual(name = 'Type', 
-                     values = c('black', 'red'), 
-                     labels = c('Inspection', 'Lightbulb failed')) +
-  theme(axis.text.y = element_blank(),
-        legend.position = 'none')
+p1 <- realisation_of_the_process(data1) +
+  ggtitle('Sample realistions of the process.')
 
 data2 <- generate_censored_data(1, 3, 30)
 
-p2 <- ggplot(data.frame()) +
-  geom_point(aes(x = data2$inspection_times, 
-                 y = rep_len(0, length(data2$inspection_times)),
-                 color = 'black')) +
-  geom_point(aes(x = data2$light_failures_times, 
-                 y = rep_len(0, length(data2$light_failures_times)), 
-                 color = 'red')) +
-  theme_minimal() +
-  xlab(TeX('Time $t$')) +
-  ylab('') +
-  scale_color_manual(name = 'Type', 
-                     values = c('black', 'red'), 
-                     labels = c('Inspection', 'Lightbulb failed'),
-                     guide = 'legend') +
+p2 <- realisation_of_the_process(data2) +
   theme(axis.text.y = element_blank(),
         legend.position = 'bottom')
 
 p1 / p2
 ```
-\caption{Caption.}
-\label{fig:sample2}
+\caption{Sample realisation of the process.}
+\label{fig:sample}
 \end{figure}
 
 
