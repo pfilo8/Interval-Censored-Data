@@ -23,6 +23,7 @@ knitr::opts_chunk$set(fig.align='center', message=F, warning=F)
 ```{r}
 library(tidyverse)
 library(ggplot2)
+library(latex2exp)
 ```
 
 \section{Introduction}
@@ -42,22 +43,48 @@ dataframe_analysis <- read_csv('results/results_analysis_generator.csv')
 \begin{figure}[H]
 ```{r echo=FALSE, fig.width=6, fig.height=4.5}
 dataframe_analysis %>% 
-  ggplot(aes(x = lambda, y = replacements)) +
-  geom_point(aes(color = nu)) +
-  facet_grid(~T0)
+  ggplot(aes(x = lambda, y = replacements, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('$\\nu$ - inspection rate')) +
+  ggtitle('Number of lightbulb replacements.') +
+  theme_minimal()
 ```
 \caption{Caption.}
 \label{fig:replacements}
 \end{figure}
 
-
 \begin{figure}[H]
 ```{r echo=FALSE, fig.width=6, fig.height=4.5}
 dataframe_analysis %>% 
-  ggplot(aes(x = lambda, y = without)) +
-  geom_point(aes(color = nu)) +
-  facet_grid(~T0)
+  ggplot(aes(x = lambda, y = without, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('$\\nu$ - inspection rate')) +
+  ggtitle('Number of lightbulb replacements.') +
+  theme_minimal()
 ```
 \caption{Caption.}
 \label{fig:without}
+\end{figure}
+
+
+\begin{figure}[H]
+```{r echo=FALSE, fig.width=8, fig.height=4.5}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = nonzero.left, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('$\\nu$ - inspection rate')) +
+  ggtitle('Non zero left intervals.') +
+  theme_minimal()
+```
+\caption{Caption.}
+\label{fig:non-zero}
 \end{figure}
