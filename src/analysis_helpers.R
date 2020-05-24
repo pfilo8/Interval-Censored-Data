@@ -4,8 +4,7 @@ count_light_replacement <- function(data){
 
 count_percentage_time_without_light <- function(data){
   result <- cumsum(data$intervals$right) - data$light_failures_times
-  result <- result[-length(result)]
-  result <- sum(result)
+  result <- sum(head(result, -1))
   return(result/data$time_end)
 }
 

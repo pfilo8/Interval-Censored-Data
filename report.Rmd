@@ -1,5 +1,6 @@
 ---
 title: "Report II"
+subtitle: "Periodic inspections and interval censored data"
 author: "Petronela Pawlisz (230032), Patryk Wielopolski (234891)"
 output:
   pdf_document: default
@@ -19,10 +20,44 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.align='center', message=F, warning=F) 
 ```
 
-```{r echo=FALSE}
-source('src/generator.R')
-source('src/analysis_helpers.R')
-source('src/estimators.R')
+```{r}
+library(tidyverse)
+library(ggplot2)
 ```
 
+\section{Introduction}
+In this report we will focus on interval censored data. We will consider simple example of lightbulb which is periodicaly inspected if it has failed. 
 
+\section{Generator}
+Our implementation of generator is presented on Listing \ref{lst:generator}. Firsly we create counters for current time, last time of lightbulb checking and last time of lightbulb changing. Also we initialize vectors and list which will store our results. Implementation of event loop is a bit straightforward. We are going through while loop till the current time is smaller than simulation end time. Then we check if lightbulb failed. If yes, then we save intervals, change lightbulb to new one and generate its time of failure and save that time. After that we generate new inspection time. When the while loop ends, we add last observations, which wasn't censured.
+
+\lstinputlisting[language=R, caption=Implementation of generator., label={lst:generator}, captionpos=b]{src/generator.R}
+
+\section{Analysis of generator}
+
+```{r echo=FALSE}
+dataframe_analysis <- read_csv('results/results_analysis_generator.csv')
+```
+
+\begin{figure}[H]
+```{r echo=FALSE, fig.width=6, fig.height=4.5}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = replacements)) +
+  geom_point(aes(color = nu)) +
+  facet_grid(~T0)
+```
+\caption{Caption.}
+\label{fig:replacements}
+\end{figure}
+
+
+\begin{figure}[H]
+```{r echo=FALSE, fig.width=6, fig.height=4.5}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = without)) +
+  geom_point(aes(color = nu)) +
+  facet_grid(~T0)
+```
+\caption{Caption.}
+\label{fig:without}
+\end{figure}
