@@ -31,7 +31,7 @@ source('src/plots.R')
 ```
 
 \section{Introduction}
-In this report we will focus on interval censored data. We will consider simple example of lightbulb which is periodicaly inspected if it has failed. 
+In this report we will focus on periodic inspections and interval censored data. We will consider simple situation of lightbulb which is periodicaly inspected if it has failed. This quite simple example will enable us to understand censoring mechanism and some interesting properties of such kind of processes. Moreover we will get familiar with estimation methods of survival function.
 
 \section{Generator}
 Our implementation of generator is presented on Listing \ref{lst:generator}. Firsly we create counters for current time, last time of lightbulb checking and last time of lightbulb changing. Also we initialize vectors and list which will store our results. Implementation of event loop is a bit straightforward. We are going through while loop till the current time is smaller than simulation end time. Then we check if lightbulb failed. If yes, then we save intervals, change lightbulb to new one and generate its time of failure and save that time. After that we generate new inspection time. When the while loop ends, we add last observations, which wasn't censured. The function returns list of inspection times, light failure times, censored intervals and initial parameters.
@@ -79,7 +79,7 @@ We want to check following statistics:
   \item percentage of time without light,
   \item number of lightbulb inspections,
   \item number of lightbulb failures,
-  \item percentage of time when one more inspections occured before failure.
+  \item percentage of inspections where left interval was non-zero.
 \end{itemize}
 
 Our results are presented on plots with following structure:
@@ -97,7 +97,7 @@ dataframe_analysis <- read_csv('results/results_analysis_generator.csv')
 Figure \ref{fig:replacements} represents number of lightbulb replacements. Our intuitions is that low rate of $\nu$ which corresponds to frequent checking of lightbulb will give us the highest value of lightbulb replacements. When we get higher value of this parameter, we will get smaller value of statistic. Also to our minds taking higher value of $\lambda$ will corresponds to smaller value of replacements because lightbulb will be more durable. As we can see on the plot all our intuisions are similar to obtained results. Also it's worth to mention that parameter $T_0$ only scales our plot but doesn't affect shape of curves.
 
 \begin{figure}
-```{r echo=FALSE, fig.width=8, fig.height=4.5}
+```{r echo=FALSE, fig.width=8, fig.height=4}
 dataframe_analysis %>% 
   ggplot(aes(x = lambda, y = replacements, group = nu, color = nu)) +
   geom_point() +
@@ -115,7 +115,7 @@ dataframe_analysis %>%
 The second plot, which we will be analysing and can be found on Figure \ref{fig:without}, corresponds to statistic 'percentage of time without light'. It may be very crucial information from application perspective because from this plot we could deduce how often we should check our lightbulb to obtain specific level of percentage of time without light (and going beyond that this answears the question why we care about estimation methods of survival functions and parameter $\lambda$). Our intuintions for that plot is that for high value of $\lambda$ and small value of $\nu$ we will get the smallest value of statistic and conversely for small value of $\lambda$ and high value of $\nu$ we will get the highest value of statistic. First situation corresponds to very frequent checking of lightbuld which is durable and second one to very rare checking of not durable lightbulb. Our intuisions match to obtained results. Also parameter $T_0$ has no bigger influence to simulations.
 
 \begin{figure}
-```{r echo=FALSE, fig.width=8, fig.height=4.5}
+```{r echo=FALSE, fig.width=8, fig.height=4}
 dataframe_analysis %>% 
   ggplot(aes(x = lambda, y = without, group = nu, color = nu)) +
   geom_point() +
@@ -133,7 +133,7 @@ dataframe_analysis %>%
 The next plot represents number of lightublb inspections and can be found on figure \ref{fig:inspections}. Intuitions for that plot are quite straightforward. Inspections are Poisson process so we should obtain number of lightbulbs equal to $\frac{T_0}{\nu}$. Indeed our simulations confirms that and also it can be treated as empirical proof of previous fact. Also it's worth to mentation that these statistics doesn't depend on process of lightbulb failures.
 
 \begin{figure}
-```{r echo=FALSE, fig.width=8, fig.height=4.5}
+```{r echo=FALSE, fig.width=8, fig.height=4}
 dataframe_analysis %>% 
   ggplot(aes(x = lambda, y = inspections, group = nu, color = nu)) +
   geom_point() +
@@ -148,37 +148,39 @@ dataframe_analysis %>%
 \label{fig:inspections}
 \end{figure}
 
+The next plot is presented on Figure \ref{fig:failures}. It represents value of number of lightbulb failures. If we think about our process we can conclude that the result highly depends on $\nu$ parameter because it's responsible for how often we detect that lightbulb has failed. So our intiusions are that as $\nu$ will be smaller the more failures we will observe and higher values of $\lambda$ will provide us smaller number of failures because then lightbulbs will be more durable. As we can observe on figure, our thougts are correct and it confirms our belifes that our generator is performing in correct way.
 
 \begin{figure}
-```{r echo=FALSE, fig.width=8, fig.height=4.5}
+```{r echo=FALSE, fig.width=8, fig.height=4}
 dataframe_analysis %>% 
   ggplot(aes(x = lambda, y = failures, group = nu, color = nu)) +
   geom_point() +
   geom_line() +
   facet_grid(~T0) +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
-  ylab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Number of lightbulb failures.')) +
   ggtitle('Number of lightbulb failures.') +
   theme_minimal()
 ```
-\caption{Caption.}
+\caption{Number of lightbulb failures in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
 \label{fig:failures}
 \end{figure}
 
-
+The last one plot in this section is presented on Figure \ref{fig:non-zero}. It represents statistic 'percentage of inspections where left interval was non-zero' which could be interpreted what percentage of observations has more than one inspection before failure which gives us better observation to our estimator. Our intuitions are that small $\nu$ and big $\lambda$ will give us the best (small) value because we have frequent checks and rare failures. Conversly high value of $\nu$ and small value of $\lambda$ will give us the worst results because we have frequent failures and check that rarely. Simulations confirm our suppositions. It's worth to mention that we can observe how the curves are getting smoother in increase of $T_0$. It's probably due to fact that as we have longer simulations we have more observations and estimations of mean value of statistics are better.
 \begin{figure}
-```{r echo=FALSE, fig.width=8, fig.height=4.5}
+```{r echo=FALSE, fig.width=8, fig.height=4}
 dataframe_analysis %>% 
   ggplot(aes(x = lambda, y = nonzero.left, group = nu, color = nu)) +
   geom_point() +
   geom_line() +
   facet_grid(~T0) +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
-  ylab(TeX('$\\nu$ - inspection rate')) +
-  ggtitle('Non zero left intervals.') +
+  ylab(TeX('Percentage of inspections where left interval was non-zero')) +
+  ggtitle('Percentage of inspections where left interval was non-zero.') +
   theme_minimal()
 ```
-\caption{Caption.}
+\caption{Percentage of inspections where left interval was non-zero in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
 \label{fig:non-zero}
 \end{figure}
 
+In this part we have analyzed some interesting statistics which enabled us to better understand considered process and confirm that our generator works properly. After this analysis we can smoothly go to estimation problem.
