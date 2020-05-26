@@ -38,20 +38,24 @@ Our implementation of generator is presented on Listing \ref{lst:generator}. Fir
 
 \lstinputlisting[language=R, caption=Implementation of generator., label={lst:generator}, captionpos=b]{src/generator.R}
 
-Sample realisations of process can be found on figure \ref{fig:sample}. There are two examples which shows times when inspection has occured (black dots) and lightbulb has died (red dots).
+From theoretical aspect it's worth to mentions that process of inspections is a Poisson process because it starts in 0, its increases are independent and its waiting times for next event are independent and have exponential distribution. Besides process of lightbulb changes is not a Poisson process because waiting times are not idependet.
+
+Sample realisations of process can be found on figure \ref{fig:sample}. There are two examples which shows times when inspection has occured (black dots) and lightbulb has died (red dots). As we can observe everything looks correct, especially failures and inspections are in correct order. But to be sure we will make further analysis in next section.
 
 \begin{figure}
 ```{r echo=FALSE, fig.width=6, fig.height=4.5}
 data1 <- generate_censored_data(1, 3, 30)
 
 p1 <- realisation_of_the_process(data1) +
-  ggtitle('Sample realistions of the process.')
+  ggtitle('Sample realistions of the process.') +
+  xlim(0, 30)
 
 data2 <- generate_censored_data(1, 3, 30)
 
 p2 <- realisation_of_the_process(data2) +
   theme(axis.text.y = element_blank(),
-        legend.position = 'bottom')
+        legend.position = 'bottom') +
+  xlim(0, 30)
 
 p1 / p2
 ```
@@ -62,9 +66,35 @@ p1 / p2
 
 \section{Analysis of generator}
 
+Before we start estimations of survival function we will take a closer look to our generator. To do that we have simulated 300 times our process for grid of parameters:
+\begin{itemize}
+  \item $\lambda$ - $[1, 10]$ with step equal 1,
+  \item $\nu$ - $[1, 10]$ with step equal 1,
+  \item $T_{0}$ - $[100, 700]$ with step equal 300.
+\end{itemize}
+
+We want to check following statistics:
+\begin{itemize}
+  \item number of lightbulb replacements,
+  \item percentage of time without light,
+  \item number of lightbulb inspections,
+  \item number of lightbulb failures,
+  \item percentage of time when one more inspections occured before failure.
+\end{itemize}
+
+Our results are presented on plots with following structure:
+\begin{itemize}
+  \item x-axis contains $\lambda$ - lightbulb failure rate,
+  \item y-axis contains value of statistics,
+  \item color represents $\nu$ - inspection rate,
+  \item grid represents $T_{0}$ value.
+\end{itemize}
+
 ```{r echo=FALSE}
 dataframe_analysis <- read_csv('results/results_analysis_generator.csv')
 ```
+
+Figure \ref{fig:replacements} represents number of lightbulb replacements. Our intuitions is that low rate of $\nu$ which corresponds to frequent checking of lightbulb will give us the highest value of lightbulb replacements. When we get higher value of this parameter, we will get smaller value of statistic. Also to our minds taking higher value of $\lambda$ will corresponds to smaller value of replacements because lightbulb will be more durable. As we can see on the plot all our intuisions are similar to obtained results. Also it's worth to mention that parameter $T_0$ only scales our plot but doesn't affect shape of curves.
 
 \begin{figure}
 ```{r echo=FALSE, fig.width=8, fig.height=4.5}
@@ -74,14 +104,15 @@ dataframe_analysis %>%
   geom_line() +
   facet_grid(~T0) +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
-  ylab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Number of lightbulb replacements.')) +
   ggtitle('Number of lightbulb replacements.') +
   theme_minimal()
 ```
-\caption{Caption.}
+\caption{Number of lightbulb replacements in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
 \label{fig:replacements}
 \end{figure}
 
+The second plot, which we will be analysing and can be found on Figure \ref{fig:without}, corresponds to statistic 'percentage of time without light'. It may be very crucial information from application perspective because from this plot we could deduce how often we should check our lightbulb to obtain specific level of percentage of time without light (and going beyond that this answears the question why we care about estimation methods of survival functions and parameter $\lambda$). Our intuintions for that plot is that for high value of $\lambda$ and small value of $\nu$ we will get the smallest value of statistic and conversely for small value of $\lambda$ and high value of $\nu$ we will get the highest value of statistic. First situation corresponds to very frequent checking of lightbuld which is durable and second one to very rare checking of not durable lightbulb. Our intuisions match to obtained results. Also parameter $T_0$ has no bigger influence to simulations.
 
 \begin{figure}
 ```{r echo=FALSE, fig.width=8, fig.height=4.5}
@@ -91,14 +122,15 @@ dataframe_analysis %>%
   geom_line() +
   facet_grid(~T0) +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
-  ylab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Percentage of time without light.')) +
   ggtitle('Percentage of time without light.') +
   theme_minimal()
 ```
-\caption{Caption.}
+\caption{Percentage of time without light in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
 \label{fig:without}
 \end{figure}
 
+The next plot represents number of lightublb inspections and can be found on figure \ref{fig:inspections}. Intuitions for that plot are quite straightforward. Inspections are Poisson process so we should obtain number of lightbulbs equal to $\frac{T_0}{\nu}$. Indeed our simulations confirms that and also it can be treated as empirical proof of previous fact. Also it's worth to mentation that these statistics doesn't depend on process of lightbulb failures.
 
 \begin{figure}
 ```{r echo=FALSE, fig.width=8, fig.height=4.5}
@@ -108,11 +140,11 @@ dataframe_analysis %>%
   geom_line() +
   facet_grid(~T0) +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
-  ylab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Number of lightbulb inspections.')) +
   ggtitle('Number of lightbulb inspections.') +
   theme_minimal()
 ```
-\caption{Caption.}
+\caption{Number of lightbulb inspections in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
 \label{fig:inspections}
 \end{figure}
 
@@ -149,3 +181,4 @@ dataframe_analysis %>%
 \caption{Caption.}
 \label{fig:non-zero}
 \end{figure}
+
