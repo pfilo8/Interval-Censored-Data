@@ -184,3 +184,173 @@ dataframe_analysis %>%
 \end{figure}
 
 In this part we have analyzed some interesting statistics which enabled us to better understand considered process and confirm that our generator works properly. After this analysis we can smoothly go to estimation problem.
+
+\section{Naive estimator}
+
+We want to estimate the failure rate using an average of finite right sides of intervals. This is a naive estimator which ignores the censoring.
+We want to check if how this estimator depends on choosen $\nu$ and $\lambda$.
+
+\subsection{Mean of the estimator}
+
+Our intuitions is that the estimated values will be higher than the real values. By taking the time of lightbub checking as the time of lightbulb fail we add to the lifetime of lightbulb some extra time. The time of lightbulb work is artificially elongated, which results in higher values of $\lambda$ estimator.  
+
+At figure \ref{fig:mean_naive} we observe the estimated values of the failure rate and the real values of $\lambda$ (dotted line). As we predicted the estimated values are higher.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+lambda_vector <- seq(1, 10, 1)
+nu_vector <- seq(1, 10, 1)
+count <- 1:length(lambda_vector)
+mc <- seq(1, 100, 1)
+
+means_for_one_generation <- c()
+vars_for_one_generation <- c()
+bias_for_one_generation <- c()
+mean_sq_for_one_generation <- c()
+means <- matrix(0,length(lambda_vector),length(lambda_vector))
+vars <- matrix(0,length(lambda_vector),length(lambda_vector))
+bias <- matrix(0 ,length(lambda_vector),length(lambda_vector))
+mean_sq <- matrix(0,length(lambda_vector),length(lambda_vector))
+
+for (i in count){
+  for (j in count){
+    for (m in mc){
+      data <- generate_censored_data(lambda_vector[i], nu_vector[j], 100)
+      means_for_one_generation[m] <- mean(data$intervals$right[1:length(data$intervals$right)-1])
+      vars_for_one_generation[m] <- var(data$intervals$right[1:length(data$intervals$right)-1])
+      bias_for_one_generation[m] <- mean(data$intervals$right[1:length(data$intervals$right)-1] - lambda_vector)
+      mean_sq_for_one_generation[m] <- mean((data$intervals$right[1:length(data$intervals$right)-1] - lambda_vector)^2)
+    }
+    means[i,j] <- mean(means_for_one_generation)
+    vars[i,j] <- mean(vars_for_one_generation)
+    bias[i,j] <- mean(bias_for_one_generation)
+    mean_sq[i,j] <- mean(mean_sq_for_one_generation)
+  }
+}
+
+p1 <- data.frame(lambda_vector ,means[ ,1])  %>%
+  ggplot(aes(x = lambda_vector, y = means[ ,1])) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = lambda_vector), color = "blue", linetype = "dotted") +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Mean of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\lambda$, , $\\nu = 1$') +
+  theme_minimal()
+
+p2 <- data.frame(nu_vector ,means[1, ])  %>%
+  ggplot(aes(x = lambda_vector, y = means[1, ])) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = lambda_vector), color = "blue", linetype = "dotted") +
+  xlab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Mean of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  theme_minimal()
+
+p1 + p2 
+```
+\caption{Mean of naive estimator of the failure rate.}
+\label{fig:mean_naive}
+\end{figure}
+
+
+\subsection{Variance of the estimator}
+
+For bigger of $\nu$ frequency of checking lightbulb is smaller which can results in longer time between lightbulb fail and lightbulb replacemet than for more freqent checking. Our intuition is that for bigger values of $\nu$ and $\lambda$ the variance of naive estimator should be bigger.  
+
+At figure \ref{fig:var_naive} we observe that the bias of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. The growth is exponential. 
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+p1 <- data.frame(lambda_vector ,vars[ ,1])  %>%
+  ggplot(aes(x = lambda_vector, y = vars[ ,1])) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Variance  of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\lambda$, $\\nu = 1$') +
+  theme_minimal()
+
+p2 <- data.frame(nu_vector ,vars[1, ])  %>%
+  ggplot(aes(x = lambda_vector, y = vars[1, ])) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Variance of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  theme_minimal()
+
+p1 + p2 
+```
+\caption{Variance of naive estimator of the failure rate.}
+\label{fig:var_naive}
+\end{figure}
+
+\subsection{Bias of the estimator}
+
+The low rate of $\nu$ which corresponds to frequent checking of lightbulb which should result in less time bewteen lightbulb fail and lightbulb replacement. The low rate of $\lambda$ corresponds to  highest value of lightbulb replacements and as with small $\nu$ it should reduce the time between lightbulb fail and lightbulb replacement. Due to that our intuition is that the estimated values will be closer to the real ones for smaller values of $\nu$ and $\lambda$.  
+
+At figure \ref{fig:bias_naive} we observe that the bias of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. The growth is linear. 
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+p1 <- data.frame(lambda_vector ,bias[ ,1])  %>%
+  ggplot(aes(x = lambda_vector, y = bias[ ,1])) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Bias of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\lambda$, , $\\nu = 1$') +
+  theme_minimal()
+
+p2 <- data.frame(nu_vector ,bias[1, ])  %>%
+  ggplot(aes(x = lambda_vector, y = bias[1, ])) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Bias of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  theme_minimal()
+
+p1 + p2 
+```
+\caption{Bias of naive estimator of the failure rate.}
+\label{fig:bias_naive}
+\end{figure}
+
+\subsection{Mean square error of the estimator}
+
+As previously our intuition is that the estimated values will be closer to the real ones for smaller values of $\nu$ and $\lambda$, so the mean square error should be the smallest for the smallest chosen $\nu$ and $\lambda$.  
+
+At figure \ref{fig:mean_sq_naive} we observe that in fact the mean square error of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. It is the exponential growth.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+p1 <- 
+data.frame(lambda_vector ,mean_sq[ ,1])  %>%
+  ggplot(aes(x = lambda_vector, y = mean_sq[ ,1])) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Mean square error of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\lambda$, , $\\nu = 1$') +
+  theme_minimal()
+
+p2 <- data.frame(nu_vector ,mean_sq[1, ])  %>%
+  ggplot(aes(x = lambda_vector, y = mean_sq[1, ])) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\nu$ - inspection rate')) +
+  ylab(TeX('Mean square error of naive estimator of $\\lambda$')) +
+  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  theme_minimal()
+
+
+p1 + p2 
+```
+\caption{Mean square error of naive estimator of the failure rate.}
+\label{fig:mean_sq_naive}
+\end{figure}
+
+
