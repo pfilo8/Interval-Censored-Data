@@ -15,10 +15,10 @@ means_for_one_generation <- c()
 vars_for_one_generation <- c()
 bias_for_one_generation <- c()
 mean_sq_for_one_generation <- c()
-means <- matrix(,length(lambda_vector),length(lambda_vector))
-vars <- matrix(,length(lambda_vector),length(lambda_vector))
-bias <- matrix(,length(lambda_vector),length(lambda_vector))
-mean_sq <- matrix(,length(lambda_vector),length(lambda_vector))
+means <- matrix(0,length(lambda_vector),length(lambda_vector))
+vars <- matrix(0,length(lambda_vector),length(lambda_vector))
+bias <- matrix(0,length(lambda_vector),length(lambda_vector))
+mean_sq <- matrix(0,length(lambda_vector),length(lambda_vector))
 
 for (i in count){
   for (j in count){
