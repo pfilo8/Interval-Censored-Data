@@ -49,7 +49,8 @@ for (k in loop_num){
   }
 }
 
-org_intervals <- data.frame(E[1:length(data$intervals$left), ],E[length(data$intervals$left) + 1 : length(data$intervals$left) , ])
+org_intervals <- data.frame(E[1:length(data$intervals$left), ],
+                            E[length(data$intervals$left) + 1 : length(data$intervals$left) , ])
 turnbull_interval <- data.frame(intervals_left, type_left, intervals_right, type_right)
 
 
@@ -63,36 +64,31 @@ A <- matrix(0,n,m)
 
 for (k in num_row){
   for (l in num_col){
-    if (turnbull_interval[l,1] >= org_intervals[k,1] & turnbull_interval[l,3] <= org_intervals[k,3]){
+    if (turnbull_interval[l,1] >= org_intervals[k,1] & 
+        turnbull_interval[l,3] <= org_intervals[k,3]){
       A[k,l] <- 1
     }
   }
 }
 
-s <- rep(1/m, m) 
 
-how_many_times <- 1:10
-for (N in how_many_times){
-d_j <- c()
-for (q in num_col){
-  d_inside <- c()
-for (p in num_row){
-    d_inside <- c(d_inside, A[p,q]*s[q] / sum(A[ ,q]*s[q]))
-}
-  d_j[q] = sum(d_inside)
-}
-
-n_j <- c()
-for (r in num_col){
-  n_j[r] <- sum(d_j[r:m])
-}
-
-p_j <- (n_j - d_j)/ n_j
-
-S_j <- c()
-for (t in num_col){
-  S_j[t] <- prod(d_j[1:t])
+count_interval_values <- function(A, eps) {
+  eps <- 0.01
+  s <- rep(1/m, m)
+  
+  while (TRUE) {
+    d_j <- colSums(A*s/rowSums(iloczyn))
+    n_j <- rev(cumsum(rev(d_j)))
+    p_j <- (n_j - d_j)/ n_j
+    S_j <- cumprod(p_j)
+    s_temp <- c(1, S_j[1:length(S_j)-1]) - S_j
+    if (sum(s-s_temp) < eps) {
+      break
+    }
+    s <- s_temp
+  }
 }
 
-s_j <- S_j
-}
+
+
+
