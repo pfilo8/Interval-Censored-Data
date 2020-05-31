@@ -12,7 +12,6 @@ nu_vector <- 3
 data <- generate_censored_data(lambda_vector, nu_vector, 100)
 vector_intervals <- c(data$intervals$left, data$intervals$right)
 
-#nadajê wartoœci e
 E <- matrix(0,length(vector_intervals),2)
 count <- seq(length(vector_intervals))
 for (i in count){
@@ -25,9 +24,7 @@ for (i in count){
 } 
 E[i,2] <- -2
 
-# porz¹dkujê
 E_2 <- E[order(E[ ,1]), ]
-#sprawdzam wartoœci e
 loop_num <- seq(length(vector_intervals)-1)
 for (j in loop_num){
   if (E_2[j,1] == E_2[j+1,1] & E_2[j,2] > E_2[j+1,2]){
@@ -38,7 +35,6 @@ for (j in loop_num){
   }
 }
 
-#wybieram przedzia³y
 intervals_left <- c()
 intervals_right <- c()
 type_left <- c()
@@ -56,22 +52,47 @@ for (k in loop_num){
 org_intervals <- data.frame(E[1:length(data$intervals$left), ],E[length(data$intervals$left) + 1 : length(data$intervals$left) , ])
 turnbull_interval <- data.frame(intervals_left, type_left, intervals_right, type_right)
 
-# 
-# num_row <- 1: length(data$intervals$left)
-# num_col <- 1: length(intervals_left)
-# 
-# n <- length(data$intervals$left)
-# m <- length(intervals_left)
-# 
-# A <- matrix(0,n,m)
-# 
-# for (k in num_row){
-#   for (l in num_col){
-#     if (turnbull_interval[l,1] > org_intervals[k,1] & turnbull_interval[l,3] < org_intervals[k,3]){
-#       A[k,l] <- 1
-#     } 
-#   }
-# }
-# 
 
+num_row <- 1: length(data$intervals$left)
+num_col <- 1: length(intervals_left)
 
+n <- length(data$intervals$left)
+m <- length(intervals_left)
+
+A <- matrix(0,n,m)
+
+for (k in num_row){
+  for (l in num_col){
+    if (turnbull_interval[l,1] >= org_intervals[k,1] & turnbull_interval[l,3] <= org_intervals[k,3]){
+      A[k,l] <- 1
+    }
+  }
+}
+
+s <- rep(1/m, m) 
+
+how_many_times <- 1:10
+for (N in how_many_times){
+d_j <- c()
+for (q in num_col){
+  d_inside <- c()
+for (p in num_row){
+    d_inside <- c(d_inside, A[p,q]*s[q] / sum(A[ ,q]*s[q]))
+}
+  d_j[q] = sum(d_inside)
+}
+
+n_j <- c()
+for (r in num_col){
+  n_j[r] <- sum(d_j[r:m])
+}
+
+p_j <- (n_j - d_j)/ n_j
+
+S_j <- c()
+for (t in num_col){
+  S_j[t] <- prod(d_j[1:t])
+}
+
+s_j <- S_j
+}
