@@ -36,6 +36,12 @@ for (i in count){
   }
 }
 
+write.csv(means, 'means.csv', row.names=FALSE)
+write.csv(vars, 'vars.csv', row.names=FALSE)
+write.csv(bias, 'bias.csv', row.names=FALSE)
+write.csv(mean_sq, 'mean_sq.csv', row.names=FALSE)
+
+
 data.frame(lambda_vector ,means[ ,1])  %>%
   ggplot(aes(x = lambda_vector, y = means[ ,1])) +
   geom_point() +

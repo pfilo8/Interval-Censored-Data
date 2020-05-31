@@ -209,7 +209,7 @@ bias_for_one_generation <- c()
 mean_sq_for_one_generation <- c()
 means <- matrix(0,length(lambda_vector),length(lambda_vector))
 vars <- matrix(0,length(lambda_vector),length(lambda_vector))
-bias <- matrix(0 ,length(lambda_vector),length(lambda_vector))
+bias <- matrix(0,length(lambda_vector),length(lambda_vector))
 mean_sq <- matrix(0,length(lambda_vector),length(lambda_vector))
 
 for (i in count){
@@ -235,7 +235,7 @@ p1 <- data.frame(lambda_vector ,means[ ,1])  %>%
   geom_line(aes(y = lambda_vector), color = "blue", linetype = "dotted") +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
   ylab(TeX('Mean of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\lambda$, , $\\nu = 1$') +
+  ggtitle('Changing lightbulb failure rate') +
   theme_minimal()
 
 p2 <- data.frame(nu_vector ,means[1, ])  %>%
@@ -245,7 +245,7 @@ p2 <- data.frame(nu_vector ,means[1, ])  %>%
   geom_line(aes(y = lambda_vector), color = "blue", linetype = "dotted") +
   xlab(TeX('$\\nu$ - inspection rate')) +
   ylab(TeX('Mean of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  ggtitle('Changing inspection rate') +
   theme_minimal()
 
 p1 + p2 
@@ -259,7 +259,7 @@ p1 + p2
 
 For bigger of $\nu$ frequency of checking lightbulb is smaller which can results in longer time between lightbulb fail and lightbulb replacemet than for more freqent checking. Our intuition is that for bigger values of $\nu$ and $\lambda$ the variance of naive estimator should be bigger.  
 
-At figure \ref{fig:var_naive} we observe that the bias of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. The growth is exponential. 
+At figure \ref{fig:var_naive} we observe that the variance of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. The growth is exponential. 
 
 \begin{figure}
 ```{r echo=FALSE, fig.width=8, fig.height=4}
@@ -278,7 +278,7 @@ p2 <- data.frame(nu_vector ,vars[1, ])  %>%
   geom_line() +
   xlab(TeX('$\\nu$ - inspection rate')) +
   ylab(TeX('Variance of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  ggtitle('Changing inspection rate') +
   theme_minimal()
 
 p1 + p2 
@@ -301,7 +301,7 @@ p1 <- data.frame(lambda_vector ,bias[ ,1])  %>%
   geom_line() +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
   ylab(TeX('Bias of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\lambda$, , $\\nu = 1$') +
+  ggtitle('Changing lightbulb failure rate') +
   theme_minimal()
 
 p2 <- data.frame(nu_vector ,bias[1, ])  %>%
@@ -310,7 +310,7 @@ p2 <- data.frame(nu_vector ,bias[1, ])  %>%
   geom_line() +
   xlab(TeX('$\\nu$ - inspection rate')) +
   ylab(TeX('Bias of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  ggtitle('Changing inspection rate') +
   theme_minimal()
 
 p1 + p2 
@@ -334,7 +334,7 @@ data.frame(lambda_vector ,mean_sq[ ,1])  %>%
   geom_line() +
   xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
   ylab(TeX('Mean square error of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\lambda$, , $\\nu = 1$') +
+  ggtitle('Changing lightbulb failure rate') +
   theme_minimal()
 
 p2 <- data.frame(nu_vector ,mean_sq[1, ])  %>%
@@ -343,7 +343,7 @@ p2 <- data.frame(nu_vector ,mean_sq[1, ])  %>%
   geom_line() +
   xlab(TeX('$\\nu$ - inspection rate')) +
   ylab(TeX('Mean square error of naive estimator of $\\lambda$')) +
-  ggtitle('Changing $\\nu$, $\\lambda = 1$') +
+  ggtitle('Changing inspection rate') +
   theme_minimal()
 
 
