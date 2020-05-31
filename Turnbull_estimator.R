@@ -6,8 +6,8 @@ library(patchwork)
 source('src/generator.R')
 source('src/plots.R')
 
-lambda_vector <- 1
-nu_vector <- 1
+lambda_vector <- 3
+nu_vector <- 3
 
 data <- generate_censored_data(lambda_vector, nu_vector, 100)
 vector_intervals <- c(data$intervals$left, data$intervals$right)
@@ -17,7 +17,7 @@ E <- matrix(0,length(vector_intervals),2)
 count <- seq(length(vector_intervals))
 for (i in count){
   E[i,1] <- vector_intervals[i]
-  if (i < length(data$intervals$left)-1){
+  if (i < length(data$intervals$left)+1){
     E[i,2] <- 2
   } else {
     E[i,2] <- 1
@@ -28,8 +28,8 @@ E[i,2] <- -2
 # porz¹dkujê
 E_2 <- E[order(E[ ,1]), ]
 #sprawdzam wartoœci e
-count_2 <- seq(length(vector_intervals)-1)
-for (j in count_2){
+loop_num <- seq(length(vector_intervals)-1)
+for (j in loop_num){
   if (E_2[j,1] == E_2[j+1,1] & E_2[j,2] > E_2[j+1,2]){
     a <- E_2[j, ]
     b <- E_2[j+1, ]
@@ -39,14 +39,39 @@ for (j in count_2){
 }
 
 #wybieram przedzia³y
-intervals <- matrix(0,length(vector_intervals),2)
-count_3 <- 1
-for (k in count_2){
-  if (E_2[k,2] != E_2[k+1,2]){
-    intervals[count_3, ] <- E_2[k, ]
-    intervals[count_3+1, ] <- E_2[k+1, ]
-    count_3 <- count_3 +2
+intervals_left <- c()
+intervals_right <- c()
+type_left <- c()
+type_right <- c()
+
+for (k in loop_num){
+  if (E_2[k,2] == 2 & E_2[k+1,2] == 1 || E_2[k,2] == 2 & E_2[k+1,2] == -2 ){
+    intervals_left <- c(intervals_left, E_2[k,1])
+    type_left <- c(type_left, E_2[k,2])
+    intervals_right <- c(intervals_right, E_2[k+1,1])
+    type_right <- c(type_right, E_2[k+1,2])
   }
 }
+
+org_intervals <- data.frame(E[1:length(data$intervals$left), ],E[length(data$intervals$left) + 1 : length(data$intervals$left) , ])
+turnbull_interval <- data.frame(intervals_left, type_left, intervals_right, type_right)
+
+# 
+# num_row <- 1: length(data$intervals$left)
+# num_col <- 1: length(intervals_left)
+# 
+# n <- length(data$intervals$left)
+# m <- length(intervals_left)
+# 
+# A <- matrix(0,n,m)
+# 
+# for (k in num_row){
+#   for (l in num_col){
+#     if (turnbull_interval[l,1] > org_intervals[k,1] & turnbull_interval[l,3] < org_intervals[k,3]){
+#       A[k,l] <- 1
+#     } 
+#   }
+# }
+# 
 
 
