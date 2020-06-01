@@ -4,6 +4,8 @@ install.packages(
     "ggplot2",
     "data.table",
     "latex2exp",
-    "patchwork"
+    "patchwork",
+    "xtable",
+    "kableExtra"
   )
 )

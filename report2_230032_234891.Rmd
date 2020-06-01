@@ -1,0 +1,407 @@
+---
+title: "Report II"
+subtitle: "Periodic inspections and interval censored data"
+author: "Petronela Pawlisz (230032), Patryk Wielopolski (234891)"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+  toc: True
+  number_sections: True
+header-includes:
+- \usepackage{amsmath}
+- \usepackage{float}
+- \usepackage{listings}
+- \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.align='center', message=F, warning=F) 
+```
+
+```{r echo=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(latex2exp)
+library(patchwork)
+library(xtable)
+library(kableExtra)
+
+source('src/generator.R')
+source('src/plots.R')
+```
+
+\section{Introduction}
+In this report we will focus on periodic inspections and interval censored data. We will consider simple situation of lightbulb which is periodicaly inspected if it has failed. This quite simple example will enable us to understand censoring mechanism and some interesting properties of such kind of processes. Moreover we will get familiar with estimation methods of survival function.
+
+\section{Generator}
+Our implementation of generator is presented on Listing \ref{lst:generator}. Firsly we create counters for current time, last time of lightbulb checking and last time of lightbulb changing. Also we initialize vectors and list which will store our results. Implementation of event loop is a bit straightforward. We are going through while loop till the current time is smaller than simulation end time. Then we check if lightbulb failed. If yes, then we save intervals, change lightbulb to new one and generate its time of failure and save that time. After that we generate new inspection time. When the while loop ends, we add last observations, which wasn't censured. The function returns list of inspection times, light failure times, censored intervals and initial parameters.
+
+\lstinputlisting[language=R, caption=Implementation of generator., label={lst:generator}, captionpos=b]{src/generator.R}
+
+From theoretical aspect it's worth to mentions that process of inspections is a Poisson process because it starts in 0, its increases are independent and its waiting times for next event are independent and have exponential distribution. Besides process of lightbulb changes is not a Poisson process because waiting times are not idependet.
+
+Sample realisations of process can be found on figure \ref{fig:sample}. There are two examples which shows times when inspection has occured (black dots) and lightbulb has died (red dots). As we can observe everything looks correct, especially failures and inspections are in correct order. But to be sure we will make further analysis in next section.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=6, fig.height=4.5}
+data1 <- generate_censored_data(1, 3, 30)
+
+p1 <- realisation_of_the_process(data1) +
+  ggtitle('Sample realistions of the process.') +
+  xlim(0, 30)
+
+data2 <- generate_censored_data(1, 3, 30)
+
+p2 <- realisation_of_the_process(data2) +
+  theme(axis.text.y = element_blank(),
+        legend.position = 'bottom') +
+  xlim(0, 30)
+
+p1 / p2
+```
+\caption{Sample realisation of the process.}
+\label{fig:sample}
+\end{figure}
+
+\section{Analysis of generator}
+
+Before we start estimations of survival function we will take a closer look to our generator. To do that we have simulated 300 times our process for grid of parameters:
+\begin{itemize}
+  \item $\lambda$ - $[1, 10]$ with step equal 1,
+  \item $\nu$ - $[1, 10]$ with step equal 1,
+  \item $T_{0}$ - $[100, 700]$ with step equal 300.
+\end{itemize}
+
+We want to check following statistics:
+\begin{itemize}
+  \item number of lightbulb replacements,
+  \item percentage of time without light,
+  \item number of lightbulb inspections,
+  \item number of lightbulb failures,
+  \item percentage of inspections where left interval was non-zero.
+\end{itemize}
+
+Our results are presented on plots with following structure:
+\begin{itemize}
+  \item x-axis contains $\lambda$ - lightbulb failure rate,
+  \item y-axis contains value of statistics,
+  \item color represents $\nu$ - inspection rate,
+  \item grid represents $T_{0}$ value.
+\end{itemize}
+
+```{r echo=FALSE}
+dataframe_analysis <- read_csv('results/results_analysis_generator.csv')
+```
+
+Figure \ref{fig:replacements} represents number of lightbulb replacements. Our intuitions is that low rate of $\nu$ which corresponds to frequent checking of lightbulb will give us the highest value of lightbulb replacements. When we get higher value of this parameter, we will get smaller value of statistic. Also to our minds taking higher value of $\lambda$ will corresponds to smaller value of replacements because lightbulb will be more durable. As we can see on the plot all our intuisions are similar to obtained results. Also it's worth to mention that parameter $T_0$ only scales our plot but doesn't affect shape of curves.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = replacements, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Number of lightbulb replacements.')) +
+  ggtitle('Number of lightbulb replacements.') +
+  theme_minimal()
+```
+\caption{Number of lightbulb replacements in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
+\label{fig:replacements}
+\end{figure}
+
+The second plot, which we will be analysing and can be found on Figure \ref{fig:without}, corresponds to statistic 'percentage of time without light'. It may be very crucial information from application perspective because from this plot we could deduce how often we should check our lightbulb to obtain specific level of percentage of time without light (and going beyond that this answears the question why we care about estimation methods of survival functions and parameter $\lambda$). Our intuintions for that plot is that for high value of $\lambda$ and small value of $\nu$ we will get the smallest value of statistic and conversely for small value of $\lambda$ and high value of $\nu$ we will get the highest value of statistic. First situation corresponds to very frequent checking of lightbuld which is durable and second one to very rare checking of not durable lightbulb. Our intuisions match to obtained results. Also parameter $T_0$ has no bigger influence to simulations.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = without, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Percentage of time without light.')) +
+  ggtitle('Percentage of time without light.') +
+  theme_minimal()
+```
+\caption{Percentage of time without light in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
+\label{fig:without}
+\end{figure}
+
+The next plot represents number of lightublb inspections and can be found on figure \ref{fig:inspections}. Intuitions for that plot are quite straightforward. Inspections are Poisson process so we should obtain number of lightbulbs equal to $\frac{T_0}{\nu}$. Indeed our simulations confirms that and also it can be treated as empirical proof of previous fact. Also it's worth to mentation that these statistics doesn't depend on process of lightbulb failures.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = inspections, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Number of lightbulb inspections.')) +
+  ggtitle('Number of lightbulb inspections.') +
+  theme_minimal()
+```
+\caption{Number of lightbulb inspections in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
+\label{fig:inspections}
+\end{figure}
+
+The next plot is presented on Figure \ref{fig:failures}. It represents value of number of lightbulb failures. If we think about our process we can conclude that the result highly depends on $\nu$ parameter because it's responsible for how often we detect that lightbulb has failed. So our intiusions are that as $\nu$ will be smaller the more failures we will observe and higher values of $\lambda$ will provide us smaller number of failures because then lightbulbs will be more durable. As we can observe on figure, our thougts are correct and it confirms our belifes that our generator is performing in correct way.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = failures, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Number of lightbulb failures.')) +
+  ggtitle('Number of lightbulb failures.') +
+  theme_minimal()
+```
+\caption{Number of lightbulb failures in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
+\label{fig:failures}
+\end{figure}
+
+The last one plot in this section is presented on Figure \ref{fig:non-zero}. It represents statistic 'percentage of inspections where left interval was non-zero' which could be interpreted what percentage of observations has more than one inspection before failure which gives us better observation to our estimator. Our intuitions are that small $\nu$ and big $\lambda$ will give us the best (small) value because we have frequent checks and rare failures. Conversly high value of $\nu$ and small value of $\lambda$ will give us the worst results because we have frequent failures and check that rarely. Simulations confirm our suppositions. It's worth to mention that we can observe how the curves are getting smoother in increase of $T_0$. It's probably due to fact that as we have longer simulations we have more observations and estimations of mean value of statistics are better.
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+dataframe_analysis %>% 
+  ggplot(aes(x = lambda, y = nonzero.left, group = nu, color = nu)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(~T0) +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Percentage of inspections where left interval was non-zero')) +
+  ggtitle('Percentage of inspections where left interval was non-zero.') +
+  theme_minimal()
+```
+\caption{Percentage of inspections where left interval was non-zero in setup of different parameters of process. Color represents value of $\nu$ - inspection rate.}
+\label{fig:non-zero}
+\end{figure}
+
+In this part we have analyzed some interesting statistics which enabled us to better understand considered process and confirm that our generator works properly. After this analysis we can smoothly go to estimation problem.
+
+\section{Naive estimator}
+
+We want to estimate the failure rate using an average of finite right sides of intervals. This is a naive estimator which ignores the censoring.
+We want to check if how this estimator depends on choosen $\nu$ and $\lambda$.
+
+\subsection{Mean of the estimator}
+
+Our intuitions is that the estimated values will be higher than the real values. By taking the time of lightbub checking as the time of lightbulb fail we add to the lifetime of lightbulb some extra time. The time of lightbulb work is artificially elongated, which results in higher values of $\lambda$ estimator.
+
+For bigger of $\nu$ frequency of checking lightbulb is smaller which can results in longer time between lightbulb fail and lightbulb replacemet than for more freqent checking. We expect that the bigger $\nu$, the bigger difference bewteen estimated and the real value will be. 
+
+At figure \ref{fig:mean_naive} we observe the estimated values of the failure rate and the real values of $\lambda$ (red, dotted line). As we predicted the estimated values are higher than the real ones and the bigger value of $\nu$, the bigger difference bewteen estimated and the real value is. 
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+means<-read.csv("results/means.csv")
+vars<-read.csv("results/vars.csv")
+bias<-read.csv("results/bias.csv")
+mean_sq<-read.csv("results/mean_sq.csv")
+
+means  %>%
+  ggplot(aes(x = lambdas, y = means, group = nus, color = nus)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = lambdas), color = "red", linetype = "dotted") +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Mean of naive estimator of $\\lambda$')) +
+  ggtitle('Mean of naive estimator') +
+  theme_minimal()
+
+```
+\caption{Mean of naive estimator of the failure rate.}
+\label{fig:mean_naive}
+\end{figure}
+
+\subsection{Variance of the estimator}
+
+The low rate of $\nu$ which corresponds to frequent checking of lightbulb which should result in less time bewteen lightbulb fail and lightbulb replacement. The low rate of $\lambda$ corresponds to  highest value of lightbulb replacements and as with small $\nu$ it should reduce the time between lightbulb fail and lightbulb replacement. Due to that our intuition is that the estimated values will be closer to the real ones for smaller values of $\nu$ and $\lambda$. We expect that with $\nu$ and $\lambda$ growth variance of naive estimator will also grow. 
+
+At figure \ref{fig:var_naive} we observe that the variance of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. The growth is exponential. 
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+
+vars  %>%
+  ggplot(aes(x = lambdas, y = vars, group = nus, color = nus)) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Variance  of naive estimator of $\\lambda$')) +
+  ggtitle('Variance of naive estimator') +
+  theme_minimal()
+```
+\caption{Variance of naive estimator of the failure rate.}
+\label{fig:var_naive}
+\end{figure}
+
+\subsection{Bias of the estimator}
+
+Based on previous observations we expect that with $\nu$ growth the bias of naive estimator will also grow. 
+
+At figure \ref{fig:bias_naive} we observe that the bias of naive estimator is bigger for bigger $\nu$ values as we predicted. For one chosen $\nu$ bias is constant (do not depends on $\lambda$).
+
+This estimator is not unbaised. Unbaised estimator is when bias is equal 0 (red, dotted line).
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+bias %>%
+  ggplot(aes(x = lambdas, y = bias, group = nus, color = nus)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = 0), color = "red", linetype = "dotted") +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Bias of naive estimator of $\\lambda$')) +
+  ggtitle('Bias of naive estimator') +
+  theme_minimal()
+```
+\caption{Bias of naive estimator of the failure rate.}
+\label{fig:bias_naive}
+\end{figure}
+
+\subsection{Mean square error of the estimator}
+
+As previously our intuition is that the estimated values will be closer to the real ones for smaller values of $\nu$ and $\lambda$, so the mean square error should be the smallest for the smallest chosen $\nu$ and $\lambda$.  
+
+At figure \ref{fig:mean_sq_naive} we observe that in fact the mean square error of naive estimator is bigger for bigger $\nu$ and $\lambda$ values as we predicted. It is the exponential growth.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+ 
+mean_sq  %>%
+  ggplot(aes(x = lambdas, y = mean_sq, group = nus, color = nus)) +  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Mean square error of naive estimator of $\\lambda$')) +
+  ggtitle('Mean square error of naive estimator') +
+  theme_minimal()
+```
+\caption{Mean square error of naive estimator of the failure rate.}
+\label{fig:mean_sq_naive}
+\end{figure}
+
+
+\section{Taking into account interval censoring}
+
+We created our own implementation of Turnbull estimator of survival function based on notes from lecture. Our implementation of this procedure is presented on Listing \ref{lst:turnbull}.
+
+\lstinputlisting[language=R, caption=Implementation of generator., label={lst:turnbull}, captionpos=b]{simulations/turnbull.R}
+
+Simply speaking Turnbull procedure orders the left and right end-points on single time-line and picks intervals for which right end-point follows immediately after left endpoint. The exemplary results of this procedure we can see in Table 1. 
+
+
+```{r echo=FALSE}
+org_interval<-read.csv("results/org_interval.csv")
+turnbull_interval<-read.csv("results/turnbull_interval.csv")
+
+knitr::kable(list(org_interval, turnbull_interval),
+  caption = "Generated intervals (first table) and intervals after Turnbull procedure (second table) - example", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+To estimate the failure rate we integrate area under the survival function. 
+
+We want to check if how this estimator depends on choosen $\nu$ and $\lambda$.
+
+
+\subsection{Mean of the estimator}
+
+Our intuitions is that Turnbull estimator will give us better (closer to the real ones) results than the naive one. 
+
+At figure \ref{fig:mean_turnbull} we observe the estimated values of the failure rate and the real values of $\lambda$ (red, dotted line). As we predicted the estimated values are smaller than for the naive estimator (figure \ref{fig:mean_naive}), and the bigger value of $\nu$, the bigger difference bewteen estimated and the real value is. 
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+means<-read.csv("results/means_turnbull.csv")
+vars<-read.csv("results/vars_turnbull.csv")
+bias<-read.csv("results/bias_turnbull.csv")
+mean_sq<-read.csv("results/mean_sq_turnbull.csv")
+
+means  %>%
+  ggplot(aes(x = lambdas, y = means, group = nus, color = nus)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = lambdas), color = "red", linetype = "dotted") +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Mean of Turbull estimator of $\\lambda$')) +
+  ggtitle('Mean of Turbull estimator') +
+  theme_minimal()
+```
+\caption{Mean of Turnbull estimator of the failure rate.}
+\label{fig:mean_turnbull}
+\end{figure}
+
+\subsection{Variance of the estimator}
+
+As we predicted the variance of estimated values (figure \ref{fig:var_turnbull}) are much smaller than for the naive estimator (figure \ref{fig:var_naive}), and as previously the variance of naive estimator is bigger for bigger $\nu$ and $\lambda$ values. The curve is not as smooth as for the naive estimator.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+vars  %>%
+  ggplot(aes(x = lambdas, y = vars, group = nus, color = nus)) +
+  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Variance  of Turbull estimator of $\\lambda$')) +
+  ggtitle('Variance of Turbull estimator') +
+  theme_minimal()
+```
+\caption{Variance of Turnbull estimator of the failure rate.}
+\label{fig:var_turnbull}
+\end{figure}
+
+\subsection{Bias of the estimator}
+
+As we predicted the bias values of Turnbull estimator (figure \ref{fig:bias_turnbull}) are smaller than for the naive estimator (figure \ref{fig:bias_naive}). This time the bias depends not only on $\nu$ (as it was with naive estimator) but changes also with change of $\lambda$. For one chosen $\nu$ bias is not constant.
+
+This estimator is also not unbaised. Unbaised estimator is when bias is equal 0 (red, dotted line).
+
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+bias %>%
+  ggplot(aes(x = lambdas, y = bias, group = nus, color = nus)) +
+  geom_point() +
+  geom_line() +
+  geom_line(aes(y = 0), color = "red", linetype = "dotted") +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Bias of Turbull estimator of $\\lambda$')) +
+  ggtitle('Bias of Turbull estimator') +
+  theme_minimal()
+```
+\caption{Bias of Turnbull estimator of the failure rate.}
+\label{fig:bias_turnbull}
+\end{figure}
+
+\subsection{Mean square error of the estimator}
+
+At figure \ref{fig:mean_sq_turnbull} we observe that the mean square error of Turnbull estimator is bigger for bigger $\nu$ and $\lambda$ values. It is the exponential growth. The values of mean square error of the estimator are much smaller than for the naive estimator \ref{fig:mean_sq_naive}.
+
+\begin{figure}
+```{r echo=FALSE, fig.width=8, fig.height=4}
+ mean_sq  %>%
+  ggplot(aes(x = lambdas, y = mean_sq, group = nus, color = nus)) +  geom_point() +
+  geom_line() +
+  xlab(TeX('$\\lambda$ - lightbulb failure rate')) +
+  ylab(TeX('Mean square error of Turbull estimator of $\\lambda$')) +
+  ggtitle('Mean square error of Turbull estimator') +
+  theme_minimal()
+```
+\caption{Mean square error of Turnbull estimator of the failure rate.}
+\label{fig:mean_sq_turnbull}
+\end{figure}
+
+\section{Conclusions}
+
+In this report we created a generator for periodically inspected lightbulb. Based on generated data we estimated failure rate using the naive and Turnbull estimators. For both types of estimators we tried to answer the questions: how the mean of such estimator depends on true failure rate and inspection rate, how the variance of such estimator depends on true failure rate and inspection rate, how the bias of such estimator depends on true failure rate and inspection rate, how the mean square error of such estimator depends on true failure rate and inspection rate.
+
+It seems that Turnbull estimator, the one which takes into account interval censoring, give us closer to real ones results. 
+
