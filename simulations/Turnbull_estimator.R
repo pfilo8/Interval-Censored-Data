@@ -72,23 +72,22 @@ for (k in num_row){
 }
 
 
-count_interval_values <- function(A, eps) {
-  eps <- 0.01
+count_interval_values <- function(A, m, eps=0.001, max_steps=100) {
   s <- rep(1/m, m)
   
-  while (TRUE) {
-    d_j <- colSums(A*s/rowSums(iloczyn))
+  for (i in 1:max_steps) {
+    d_j <- colSums(A*s/rowSums(A*s))
     n_j <- rev(cumsum(rev(d_j)))
     p_j <- (n_j - d_j)/ n_j
     S_j <- cumprod(p_j)
     s_temp <- c(1, S_j[1:length(S_j)-1]) - S_j
-    if (sum(s-s_temp) < eps) {
+    if (sum(abs(s-s_temp)) < eps) {
       break
     }
     s <- s_temp
   }
+  return(s)
 }
 
-
-
+count_interval_values(A, m)
 
