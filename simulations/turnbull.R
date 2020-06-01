@@ -7,7 +7,7 @@ source('src/generator.R')
 source('src/plots.R')
 
 turnbull <- function(lambda, nu) {
-data <- generate_censored_data(lambda, nu, 1000)
+data <- generate_censored_data(lambda, nu, 500)
 vector_intervals <- c(data$intervals$left, data$intervals$right)
 
 E <- matrix(0,length(vector_intervals),2)
@@ -98,3 +98,41 @@ for (j in 1:m){
 estimated_mean <- sum(length_intervals_constant*heights[1:m] + length_intervals_decrease*(heights[1:m]+heights[2:(m+1)])/2)
 return(estimated_mean)
 }
+
+
+
+lambda_vector <- seq(1, 10, 1)
+nu_vector <- seq(1, 10, 1)
+mc <- seq(1, 100, 1)
+
+lambdas <- c()
+nus <- c()
+means <- c()
+vars <- c()
+bias <- c()
+mean_sq <- c()
+
+
+for (j in 1:length(lambda_vector)){
+  for (k in 1:length(nu_vector)){
+    est_values <- c()
+    for (i in mc){
+      a <- turnbull(lambda_vector[j], nu_vector[k])
+      if (a != Inf){
+        est_values <- c(est_values, a)
+      }
+    }
+    lambdas <- c(lambdas, lambda_vector[j])
+    nus <- c(nus, nu_vector[k])
+    means <- c(means, mean(est_values))
+    vars <- c(vars, var(est_values))
+    bias <- c(bias, mean(est_values - lambda_vector[j]))
+    mean_sq <-  c(mean_sq, mean((est_values - lambda_vector[j])^2))
+  }
+}
+# 
+# 
+# write.csv(data.frame(lambdas, nus, means), file="results/means_turnbull.csv",row.names=FALSE)
+# write.csv(data.frame(lambdas, nus, vars), file="results/vars_turnbull.csv",row.names=FALSE)
+# write.csv(data.frame(lambdas, nus, bias), file="results/bias_turnbull.csv",row.names=FALSE)
+# write.csv(data.frame(lambdas, nus, mean_sq), file="results/mean_sq_turnbull.csv",row.names=FALSE)
